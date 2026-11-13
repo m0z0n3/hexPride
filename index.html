@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Code Inator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="center">
+        <input type="file" id="upload" accept="image/*">
+        <canvas id="canvas" style="display:none"></canvas>
+
+        <label for="flag">Choose A Flag!</label>
+        <select name="flag" id="flags">
+            <option value="Asexual">Asexual</option>
+            <option vale="Aromantic">Aromantic</option>
+            <option vale="AroAce">AroAce</option>
+            <option vale="Bisexual">Bisexual</option>
+            <option vale="Demiboy">Demiboy</option>
+            <option vale="Demigender">Demigender</option>
+            <option vale="Demigirl">Demigirl</option>
+            <option vale="Nonbinary">Nonbinary</option>
+            <option vale="Genderfluid">Genderfluid</option>
+            <option vale="Gay">Gay</option>
+            <option vale="Intersex">Intersex</option>
+            <option vale="Lesbian">Lesbian</option>
+            <option vale="Pansexual">Pansexual</option>
+            <option vale="Pride">Pride</option>
+            <option vale="Transgender">Transgender</option>
+        </select>
+
+        <button onclick="awesome()">Locate Pixels</button>
+
+        <table id="colorTable">
+            <tr>
+                <th>Hex Code</th>
+                <th>X Position</th>
+                <th>Y Position</th>
+                <th>Accuracy</th>
+            </tr>
+        </table>
+
+        <p id="rollingAverage"></p>
+    </div>
+    <script>
+        let fInput = document.getElementById("upload");
+        let canvas = document.getElementById("canvas");
+        const context = canvas.getContext('2d');
+
+        function awesome() {
+            const file = fInput.files[0];
+
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                context.drawImage(img,0,0);
+
+                let data = context.getImageData(0,0,img.width,img.height).data;
+
+                let flagArray = [
+                    ["Asexual",[[128, 0, 128],[163, 163, 163],[255, 255, 255],[128, 0, 128]]],
+                    ["Aromantic",[[61, 165, 66],[167, 211, 121],[255, 255, 255],[169, 169, 169],[0, 0, 0]]],
+                    ["AroAce",[[226, 140, 0],[236, 205, 0],[255, 255, 255],[98, 174, 220],[32, 56, 86]]],
+                    ["Bisexual",[[214, 2, 112],[155, 79, 150],[0, 56, 168]]],
+                    ["Demiboy",[[128, 128, 128],[196, 196, 196],[154, 218, 235],[255, 255, 255]]],
+                    ["Demigender",[[127, 127, 127],[195, 195, 195],[251, 255, 116],[255, 255, 255]]],
+                    ["Demigirl",[[128, 128, 128],[196, 196, 196],[255, 176, 202],[255, 255, 255]]],
+                    ["Nonbinary",[[255, 244, 51],[255, 255, 255],[155, 89, 208],[45, 45, 45]]],
+                    ["Genderfluid",[[255, 117, 162],[245, 245, 245],[190, 24, 214],[44, 44, 44],[51, 62, 189]]],
+                    ["Gay",[[7, 141, 112],[152, 232, 193],[255, 255, 255],[123, 173, 226],[61, 26, 120]]],
+                    ["Intersex",[[255, 216, 0],[121, 1, 170]]],
+                    ["Lesbian",[[212, 44, 0],[253, 152, 85],[255, 255, 255],[209, 97, 162],[162, 1, 97]]],
+                    ["Pansexual",[[255, 33, 140],[255, 216, 0],[33, 177, 255]]],
+                    ["Pride",[[229, 0, 0],[255, 141, 0],[255, 238, 0],[2, 129, 33],[0, 76, 255],[119, 0, 136]]],
+                    ["Transgender",[[91, 206, 250],[245, 169, 184],[255, 255, 255]]]
+                ]
+                
+                let hexCode = [[255,255,255],[0,0,0]];
+                flagArray.forEach(element => {
+                    if (element[0] == document.getElementById("flags").value) {
+                        hexCode = element[1];
+                    }
+                });
+
+                let xPosOfClosest = [];
+                let yPosOfClosest = [];
+                let colorValOfClosest = [];
+                let currentClosest = 2000001;
+                let table = document.getElementById("colorTable");
+                let rollingAvg = 0;
+
+                for (j = 0; j < hexCode.length; j++) {
+                    currentClosest = 2000001;
+                    for (i = 0; i < data.length; i += 4) {
+                        let distance = 200000;
+                        //console.log(i);
+                        distance = ((data[i+0] - hexCode[j][0]) ** 2) + ((data[i+1] - hexCode[j][1]) ** 2) + ((data[i+2] - hexCode[j][2]) ** 2);
+                        if (distance < currentClosest) {
+                            currentClosest = distance;
+                            colorValOfClosest[j] = [data[i], data[i+1],data[i+2]];
+                            xPosOfClosest[j] = (i/4 % img.width);
+                            yPosOfClosest[j] = Math.trunc((i/4) / img.width);
+                        }
+                    }
+                    console.log(colorValOfClosest[j]);
+                    console.log(xPosOfClosest[j] + " " + yPosOfClosest[j] + " " + Math.trunc((1 - (currentClosest/195075)) * 10000) / 100 + " ");
+
+                    tableRow = document.createElement("tr");
+
+                    code = document.createElement("td");
+                    code.innerHTML = convertToHex(colorValOfClosest[j][0],colorValOfClosest[j][1],colorValOfClosest[j][2]);
+
+                    xPos = document.createElement("td");
+                    xPos.innerHTML = xPosOfClosest[j];
+
+                    yPos = document.createElement("td");
+                    yPos.innerHTML = xPosOfClosest[j];
+
+                    acc = document.createElement("td");
+                    acc.innerHTML = Math.trunc((1 - (currentClosest/195075)) * 10000) / 100;
+
+                    tableRow.appendChild(code);
+                    tableRow.appendChild(xPos);
+                    tableRow.appendChild(yPos);
+                    tableRow.appendChild(acc);
+                    table.appendChild(tableRow);
+
+                    rollingAvg += Math.trunc((1 - (currentClosest/195075)) * 10000) / 100;
+                }
+                rollingAvg /= hexCode.length;
+                document.getElementById("rollingAverage").innerHTML = "You're image is about: " + Math.trunc(rollingAvg * 1000) / 1000 + "% accurate";
+            }
+        }
+
+        function convertToHex(r, g, b) { //internet steal https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+        }
+
+        function componentToHex(c) { //internet steal https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+            var hex = c.toString(16);
+            return hex.length == 1 ? "0" + hex : hex;
+        }
+    </script>
+</body>
+</html>
